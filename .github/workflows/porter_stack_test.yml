@@ -12,16 +12,16 @@ jobs:
     - name: Set Github tag
       id: vars
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+    - name: Setup porter
+      uses: porter-dev/setup-porter@v0.1.0
     - name: Deploy stack
       timeout-minutes: 30
-      uses: porter-dev/porter-cli-action@v0.1.0
-      with:
-        command: apply -f ./porter.yaml
+      run: porter apply -f ./porter.yaml
       env:
-        PORTER_CLUSTER: "11"
+        PORTER_CLUSTER: "37"
         PORTER_HOST: https://dashboard.internal-tools.porter.run
         PORTER_PR_NUMBER: ${{ github.event.number }}
-        PORTER_PROJECT: "8"
+        PORTER_PROJECT: "18"
         PORTER_STACK_NAME: test
         PORTER_TAG: ${{ steps.vars.outputs.sha_short }}
-        PORTER_TOKEN: ${{ secrets.PORTER_STACK_8_11 }}
+        PORTER_TOKEN: ${{ secrets.PORTER_STACK_18_37 }}
