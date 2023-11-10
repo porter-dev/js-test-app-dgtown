@@ -1,7 +1,7 @@
 "on":
   push:
-    branches:
-    - master
+    tags:
+    - app-integration-tests
 name: Deploy to test
 jobs:
   porter-deploy:
