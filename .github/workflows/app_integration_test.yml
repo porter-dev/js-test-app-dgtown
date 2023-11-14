@@ -1,12 +1,15 @@
-"on":
-  push:
-    tags:
-    - app-integration-tests
+on: 
+  workflow_dispatch:
+    inputs:
+      id:
+        description: 'explicitly provided id for workflow run'     
+        required: true
 name: Deploy to test
 jobs:
   porter-deploy:
     runs-on: ubuntu-latest
     steps:
+    - name: ${{ github.event.inputs.id }}
     - name: Checkout code
       uses: actions/checkout@v3
     - name: Set Github tag
