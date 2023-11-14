@@ -6,11 +6,15 @@ on:
         required: true
 name: Deploy to test
 jobs:
-  porter-deploy:
+  id:
     runs-on: ubuntu-latest
     steps:
     - name: ${{ github.event.inputs.id }}
       run: exit 0
+  porter-deploy:
+    runs-on: ubuntu-latest
+    needs: id
+    steps:
     - name: Checkout code
       uses: actions/checkout@v3
     - name: Set Github tag
