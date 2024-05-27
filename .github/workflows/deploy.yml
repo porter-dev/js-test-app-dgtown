@@ -32,7 +32,7 @@ jobs:
         run: |
           if [[ "${{ env.CURRENT_BRANCH }}" != "refs/heads/${{ env.DEPLOY_BRANCH }}" ]]; then
             echo "Not the deploy branch"
-            exit 1
+            exit 0
           fi
 
       - name: Set Github tag
