@@ -1,41 +1,57 @@
 name: Deploy to application
+
 on:
   push:
     branches:
       - '**' # Listen to all branches
   repository_dispatch:
     types: [deploy_workflow_trigger]
+
 jobs:
   porter-deploy:
     runs-on: ubuntu-latest
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-    - name: Get deploy branch from event
-      if: github.event_name == 'repository_dispatch'
-      run: echo "DEPLOY_BRANCH=${{ github.event.client_payload.deploy_branch }}" >> $GITHUB_ENV
-    - name: Get deploy branch from environment
-      if: github.event_name != 'repository_dispatch'
-      run: echo "DEPLOY_BRANCH=${{ secrets.DEPLOY_BRANCH }}" >> $GITHUB_ENV
-    - name: Check if the current branch matches deploy branch
-      id: check-branch
-      run: echo "::set-output name=branch::${{ github.ref }}"
-    - name: Set Github tag
-      id: vars
-      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-    - name: Setup porter
-      uses: porter-dev/setup-porter@v0.1.0
-    - name: Deploy to Production
-      if: startsWith(github.ref, 'refs/heads/${{ env.DEPLOY_BRANCH }}')
-      timeout-minutes: 30
-      run: exec porter apply
-      env:
-        PORTER_CLUSTER: "11"
-        PORTER_DEPLOYMENT_TARGET_ID: b4d65cbc-45ec-43e1-9e44-d58cb5de3352
-        PORTER_HOST: https://dashboard.internal-tools.porter.run
-        PORTER_PR_NUMBER: ${{ github.event.number }}
-        PORTER_PROJECT: "8"
-        PORTER_REPO_NAME: ${{ github.event.repository.name }}
-        PORTER_STACK_NAME: test-for-traba
-        PORTER_TAG: ${{ steps.vars.outputs.sha_short }}
-        PORTER_TOKEN: ${{ secrets.PORTER_STACK_8_11 }}
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Get deploy branch from event
+        if: github.event_name == 'repository_dispatch'
+        run: echo "DEPLOY_BRANCH=${{ github.event.client_payload.deploy_branch }}" >> $GITHUB_ENV
+
+      - name: Get deploy branch from environment
+        if: github.event_name != 'repository_dispatch'
+        run: echo "DEPLOY_BRANCH=${{ secrets.DEPLOY_BRANCH }}" >> $GITHUB_ENV
+
+      - name: Set current branch
+        id: set-current-branch
+        run: echo "CURRENT_BRANCH=${{ github.ref }}" >> $GITHUB_ENV
+
+      - name: Check if the current branch matches deploy branch
+        id: check-branch
+        run: |
+          if [[ "${{ env.CURRENT_BRANCH }}" != "refs/heads/${{ env.DEPLOY_BRANCH }}" ]]; then
+            echo "Not the deploy branch"
+            exit 1
+          fi
+
+      - name: Set Github tag
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Setup porter
+        uses: porter-dev/setup-porter@v0.1.0
+
+      - name: Deploy to Production
+        timeout-minutes: 30
+        run: exec porter apply
+        env:
+          PORTER_CLUSTER: "11"
+          PORTER_DEPLOYMENT_TARGET_ID: b4d65cbc-45ec-43e1-9e44-d58cb5de3352
+          PORTER_HOST: https://dashboard.internal-tools.porter.run
+          PORTER_PR_NUMBER: ${{ github.event.number }}
+          PORTER_PROJECT: "8"
+          PORTER_REPO_NAME: ${{ github.event.repository.name }}
+          PORTER_STACK_NAME: test-for-traba
+          PORTER_TAG: ${{ steps.vars.outputs.sha_short }}
+          PORTER_TOKEN: ${{ secrets.PORTER_STACK_8_11 }}
