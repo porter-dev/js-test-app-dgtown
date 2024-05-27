@@ -9,14 +9,24 @@ jobs:
   porter-deploy:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Get deploy branch from event
+      if: github.event_name == 'repository_dispatch'
+      run: echo "DEPLOY_BRANCH=${{ github.event.client_payload.deploy_branch }}" >> $GITHUB_ENV
+    - name: Get deploy branch from environment
+      if: github.event_name != 'repository_dispatch'
+      run: echo "DEPLOY_BRANCH=${{ secrets.DEPLOY_BRANCH }}" >> $GITHUB_ENV
+    - name: Check if the current branch matches deploy branch
+      id: check-branch
+      run: echo "::set-output name=branch::${{ github.ref }}"
     - name: Set Github tag
       id: vars
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
     - name: Setup porter
       uses: porter-dev/setup-porter@v0.1.0
-    - name: Deploy stack
+    - name: Deploy to Production
+      if: startsWith(github.ref, 'refs/heads/${{ env.DEPLOY_BRANCH }}')
       timeout-minutes: 30
       run: exec porter apply
       env:
